@@ -9,13 +9,27 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #000000;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
+/* Stable Solid Tactical Borders - Removed Glow/Shadow to prevent glitches */
 .shadow-inner-blue {
-  box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.15);
+  border: 1px solid #00E5FF;
 }
 
 .shadow-inner-amber {
-  box-shadow: inset 0 0 15px rgba(255, 171, 0, 0.15);
+  border: 1px solid #FFAB00;
+}
+
+/* Fix for mobile GPU rendering lines */
+* {
+  transform: translate3d(0,0,0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
