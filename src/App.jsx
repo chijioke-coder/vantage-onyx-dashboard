@@ -11,7 +11,6 @@ export default function App() {
   const [newProp, setNewProp] = useState({ title: '', price_naira: '', thumbnail_url: '' });
 
   const fetchData = async () => {
-    // Queries properties_db
     const { data: P, error: errP } = await supabase
       .from('properties_db')
       .select('*')
@@ -24,7 +23,6 @@ export default function App() {
       setDbStatus('online');
     }
     
-    // Queries zenith_leads for iPhone users
     const { data: L } = await supabase.from('zenith_leads').select('*');
     const whales = L?.filter(l => l.device_type?.toLowerCase().includes('iphone')).length;
     setWhalesActive(whales || 0);
@@ -59,17 +57,17 @@ export default function App() {
       {/* HEADER */}
       <header className="flex-none flex items-center justify-between border-b border-white/10 bg-black p-4 z-50">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-neonBlue rounded-lg flex items-center justify-center">
+          <div className="h-8 w-8 bg-neonBlue rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.3)]">
             <Zap size={18} className="text-black" />
           </div>
           <h1 className="text-xl font-black tracking-tighter uppercase italic">Vantage<span className="text-neonBlue">Onyx</span></h1>
         </div>
-        <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${dbStatus === 'online' ? 'border-green-500/30 text-green-500' : 'border-red-500/30 text-red-500'}`}>
+        <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${dbStatus === 'online' ? 'border-green-500/30 bg-green-500/10 text-green-500' : 'border-red-500/30 bg-red-500/10 text-red-500'}`}>
           <span className="text-[9px] font-black uppercase tracking-widest">{dbStatus}</span>
         </div>
       </header>
 
-      {/* SCROLLABLE MAIN */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="rounded-2xl border border-neonBlue/20 bg-[#0A0A0A] p-6 shadow-2xl">
           <p className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Live Whale Connections</p>
@@ -82,10 +80,10 @@ export default function App() {
             <span className="text-[9px] font-mono text-neonBlue uppercase">{properties.length} NODES ACTIVE</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pb-8">
+          <div className="grid grid-cols-2 gap-3 pb-24">
             {properties.map(p => (
               <div key={p.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0A]">
-                <img src={p.thumbnail_url} alt="" className="h-28 w-full object-cover" />
+                <img src={p.thumbnail_url} alt="" className="h-28 w-full object-cover opacity-80" />
                 <div className="p-3">
                   <p className="truncate text-[9px] font-black uppercase text-white mb-1">{p.title}</p>
                   <p className="font-mono text-[11px] text-neonBlue font-bold italic">₦{Number(p.price_naira).toLocaleString()}</p>
@@ -96,16 +94,16 @@ export default function App() {
         </section>
       </main>
 
-      {/* FIXED NAVIGATION */}
+      {/* STABILIZED BOTTOM NAV */}
       <nav className="flex-none h-20 bg-[#050505] border-t border-white/10 flex items-center justify-around px-2 z-50">
         <button className="flex flex-col items-center gap-1 min-w-[60px]">
           <Home className="text-neonBlue" size={22} />
-          <span className="text-[8px] font-black uppercase text-neonBlue">Node</span>
+          <span className="text-[8px] font-black uppercase text-neonBlue tracking-tighter">Node</span>
         </button>
         
-        <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-25">
+        <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-20">
           <Users className="text-white" size={22} />
-          <span className="text-[8px] font-black uppercase text-white">Leads</span>
+          <span className="text-[8px] font-black uppercase text-white tracking-tighter">Leads</span>
         </button>
 
         <div className="relative -top-6">
@@ -117,33 +115,33 @@ export default function App() {
           </button>
         </div>
 
-        <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-25">
+        <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-20">
           <BarChart3 className="text-white" size={22} />
-          <span className="text-[8px] font-black uppercase text-white">Stats</span>
+          <span className="text-[8px] font-black uppercase text-white tracking-tighter">Stats</span>
         </button>
 
         <button onClick={() => setStealth(!stealth)} className="flex flex-col items-center gap-1 min-w-[60px]">
-          <Shield className={stealth ? "text-amber-500" : "text-white opacity-25"} size={22} />
-          <span className={`text-[8px] font-black uppercase ${stealth ? 'text-amber-500' : 'text-white opacity-25'}`}>
+          <Shield className={stealth ? "text-amber-500" : "text-white opacity-20"} size={22} />
+          <span className={`text-[8px] font-black uppercase tracking-tighter ${stealth ? 'text-amber-500' : 'text-white opacity-20'}`}>
             {stealth ? 'Mask' : 'Shield'}
           </span>
         </button>
       </nav>
 
-      {/* ADD ASSET MODAL */}
+      {/* MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-6 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0D0D0D] border border-neonBlue/30 p-8 rounded-[2rem] space-y-6">
+          <div className="w-full max-w-md bg-[#0D0D0D] border border-neonBlue/30 p-8 rounded-[2.5rem] space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-neonBlue font-black uppercase text-[10px]">Deploy Asset</h2>
+              <h2 className="text-neonBlue font-black uppercase tracking-widest text-[10px]">Asset Deployment</h2>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400"><X size={24} /></button>
             </div>
             <div className="space-y-4">
-               <input placeholder="ASSET IDENTITY" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.title} onChange={e => setNewProp({...newProp, title: e.target.value})} />
-               <input placeholder="PRICE (₦)" type="number" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.price_naira} onChange={e => setNewProp({...newProp, price_naira: e.target.value})} />
-               <input placeholder="IMAGE URL" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.thumbnail_url} onChange={e => setNewProp({...newProp, thumbnail_url: e.target.value})} />
+               <input placeholder="ASSET IDENTITY" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-neonBlue" value={newProp.title} onChange={e => setNewProp({...newProp, title: e.target.value})} />
+               <input placeholder="MARKET PRICE (₦)" type="number" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-neonBlue" value={newProp.price_naira} onChange={e => setNewProp({...newProp, price_naira: e.target.value})} />
+               <input placeholder="IMAGE SOURCE URL" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-neonBlue" value={newProp.thumbnail_url} onChange={e => setNewProp({...newProp, thumbnail_url: e.target.value})} />
             </div>
-            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-4 rounded-xl uppercase text-[10px]">Authorize</button>
+            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.4em]">Confirm Auth</button>
           </div>
         </div>
       )}
