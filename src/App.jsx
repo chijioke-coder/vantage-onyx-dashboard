@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Users, Package, BarChart3, Shield, ShieldOff, Zap, Search, MessageCircle, Plus, Trash2, X } from 'lucide-react';
+import { Home, Users, Package, BarChart3, Shield, ShieldOff, Zap, Search, MessageCircle, Plus, Trash2, X, Image as ImageIcon } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
 export default function App() {
@@ -28,7 +28,10 @@ export default function App() {
   }, []);
 
   const addProperty = async () => {
-    if (!newProp.name || !newProp.price) return;
+    if (!newProp.name || !newProp.price || !newProp.image_url) {
+      alert("MISSION CRITICAL: All fields including Thumbnail Link are required.");
+      return;
+    }
     await supabase.from('properties_db').insert([{ ...newProp, view_count: 0 }]);
     setNewProp({ name: '', price: '', image_url: '' });
     setShowAddModal(false);
@@ -36,24 +39,20 @@ export default function App() {
   };
 
   const deleteProperty = async (id) => {
-    if (properties.length <= 10) {
-      alert("SAFETY LOCK: Minimum 10 properties required for heatmap stability.");
-      return;
-    }
     await supabase.from('properties_db').delete().eq('id', id);
     fetchData();
   };
 
   return (
-    <div className="min-h-screen bg-black pb-24 text-white font-sans">
+    <div className="min-h-screen bg-black pb-24 text-white font-sans selection:bg-neonBlue/30">
       {/* HEADER */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-black p-4">
         <div className="flex items-center gap-2">
           <img src="https://i.postimg.cc/k4PTnLBS/file-00000000ce7c71fbae2f98c908c282f5.png" className="h-8 w-8" alt="logo" />
           <h1 className="text-xl font-black tracking-tighter text-neonBlue uppercase">Vantage Onyx</h1>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => setShowAddModal(true)} className="p-2 border border-neonBlue bg-neonBlue/10 rounded-lg text-neonBlue">
+        <div className="flex gap-2">
+           <button onClick={() => setShowAddModal(true)} className="p-2 border border-neonBlue bg-neonBlue/10 rounded-lg text-neonBlue">
             <Plus size={20} />
           </button>
           <button onClick={() => setStealth(!stealth)} className="rounded-lg border border-white/10 p-2">
@@ -69,46 +68,75 @@ export default function App() {
           <h2 className="text-4xl font-black text-white">{whalesActive}</h2>
         </div>
 
-        {/* HEATMAP */}
+        {/* PROPERTY HEATMAP */}
         <section>
           <h3 className="mb-3 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Property Interest Heatmap</h3>
           <div className="grid grid-cols-2 gap-2">
             {properties.map(p => (
-              <div key={p.id} className={`rounded-lg border bg-onyx p-3 ${p.view_count > 500 ? 'border-red-600 bg-red-950/20' : 'border-white/10'}`}>
-                <div className="flex justify-between items-start">
-                  <p className="truncate text-[10px] font-bold uppercase w-3/4">{p.name || 'Unnamed'}</p>
-                  <button onClick={() => deleteProperty(p.id)} className="text-gray-700 hover:text-red-500"><Trash2 size={10} /></button>
+              <div key={p.id} className={`overflow-hidden rounded-lg border bg-onyx transition-all ${p.view_count > 500 ? 'border-red-600 bg-red-950/10' : 'border-white/10'}`}>
+                <div className="relative h-24 w-full bg-gray-900">
+                  <img src={p.image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=500'} alt="property" className="h-full w-full object-cover opacity-80" />
+                  <button onClick={() => deleteProperty(p.id)} className="absolute top-1 right-1 p-1 bg-black/60 rounded text-red-500"><Trash2 size={12} /></button>
                 </div>
-                <p className="font-mono text-xs text-neonBlue">₦{Number(p.price).toLocaleString()}</p>
-                <div className="mt-2 flex justify-between items-center">
-                  <span className="text-[8px] text-gray-600 font-bold uppercase">Views: {p.view_count}</span>
-                  <a href={`https://wa.me/234XXXXXXXXXX?text=Hello, I'm interested in ${p.name}`} className="text-green-500"><MessageCircle size={14} /></a>
+                <div className="p-2">
+                  <p className="truncate text-[9px] font-black uppercase text-white">{p.name || 'Untitled Asset'}</p>
+                  <p className="font-mono text-[11px] text-neonBlue">₦{Number(p.price).toLocaleString()}</p>
+                  <div className="mt-1 flex justify-between items-center border-t border-white/5 pt-1">
+                    <span className="text-[7px] text-gray-500 uppercase">Views: {p.view_count}</span>
+                    <a href={`https://wa.me/234XXXXXXXXXX?text=Vantage Onyx Inquiry: ${p.name}`} className="text-green-500"><MessageCircle size={12} /></a>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* FEED */}
+        {/* INTELLIGENCE FEED */}
         <section>
           <h3 className="mb-3 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Intelligence Feed</h3>
-          <div className="space-y-2 text-center py-10 border border-dashed border-white/5 rounded-xl">
-             <p className="text-gray-600 text-xs tracking-widest uppercase">Awaiting Live Traffic...</p>
+          <div className="space-y-2">
+            {leads.length > 0 ? leads.map(l => (
+              <div key={l.id} className="rounded-lg border border-white/5 bg-onyx p-4">
+                <span className={`font-bold uppercase text-[10px] ${stealth ? 'bg-white/10 text-transparent' : ''}`}>{l.full_name}</span>
+                <p className="text-[8px] text-gray-500 mt-1 uppercase">{l.device_type} • {l.location}</p>
+              </div>
+            )) : (
+              <div className="py-10 text-center border border-dashed border-white/5 rounded-xl">
+                 <p className="text-[9px] text-gray-700 tracking-[0.2em] uppercase font-bold">System Listening for Real-Time Leads...</p>
+              </div>
+            )}
           </div>
         </section>
       </main>
 
       {/* ADD MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-6">
-          <div className="w-full max-w-md bg-onyx border border-neonBlue p-6 rounded-2xl space-y-4">
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-6 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#0A0A0A] border border-neonBlue/50 p-6 rounded-2xl space-y-4 shadow-2xl">
             <div className="flex justify-between items-center">
-              <h2 className="text-neonBlue font-black uppercase tracking-tighter">New Asset</h2>
+              <h2 className="text-neonBlue font-black uppercase tracking-widest text-sm italic">Add New Asset</h2>
               <button onClick={() => setShowAddModal(false)}><X className="text-gray-500" /></button>
             </div>
-            <input placeholder="PROPERTY NAME" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs uppercase" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} />
-            <input placeholder="PRICE (NUMBERS ONLY)" type="number" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs" value={newProp.price} onChange={e => setNewProp({...newProp, price: e.target.value})} />
-            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest">Deploy to Heatmap</button>
+            
+            <div className="space-y-1">
+               <label className="text-[8px] text-neonBlue font-bold uppercase ml-1">Asset Identity</label>
+               <input placeholder="E.G. BANANA ISLAND PENTHOUSE" className="w-full bg-black border border-white/10 p-3 rounded-xl text-[10px] uppercase text-white outline-none focus:border-neonBlue" value={newProp.name} onChange={e => setNewProp({...newProp, name: e.target.value})} />
+            </div>
+
+            <div className="space-y-1">
+               <label className="text-[8px] text-neonBlue font-bold uppercase ml-1">Market Price (₦)</label>
+               <input placeholder="NUMBERS ONLY" type="number" className="w-full bg-black border border-white/10 p-3 rounded-xl text-[10px] text-white outline-none focus:border-neonBlue" value={newProp.price} onChange={e => setNewProp({...newProp, price: e.target.value})} />
+            </div>
+
+            <div className="space-y-1">
+               <label className="text-[8px] text-neonBlue font-bold uppercase ml-1">Thumbnail Image Direct Link</label>
+               <div className="flex items-center bg-black border border-white/10 rounded-xl px-3 focus-within:border-neonBlue transition-all">
+                  <ImageIcon size={14} className="text-gray-600" />
+                  <input placeholder="HTTPS://IMAGE-URL.JPG" className="w-full bg-transparent p-3 text-[10px] text-white outline-none" value={newProp.image_url} onChange={e => setNewProp({...newProp, image_url: e.target.value})} />
+               </div>
+            </div>
+
+            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-4 rounded-xl uppercase text-[10px] tracking-[0.3em] hover:bg-white transition-colors">Confirm Deployment</button>
           </div>
         </div>
       )}
