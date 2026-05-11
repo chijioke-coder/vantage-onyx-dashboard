@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Users, BarChart3, Shield, ShieldOff, Plus, X, Zap, Wifi, WifiOff } from 'lucide-react';
+import { Home, Users, BarChart3, Shield, Plus, X, Zap } from 'lucide-react';
 import { supabase } from './lib/supabase';
 
 export default function App() {
@@ -24,7 +24,7 @@ export default function App() {
       setDbStatus('online');
     }
     
-    // Queries zenith_leads
+    // Queries zenith_leads for iPhone users
     const { data: L } = await supabase.from('zenith_leads').select('*');
     const whales = L?.filter(l => l.device_type?.toLowerCase().includes('iphone')).length;
     setWhalesActive(whales || 0);
@@ -56,20 +56,20 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden">
       
-      {/* FIXED HEADER */}
+      {/* HEADER */}
       <header className="flex-none flex items-center justify-between border-b border-white/10 bg-black p-4 z-50">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-neonBlue rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.3)]">
+          <div className="h-8 w-8 bg-neonBlue rounded-lg flex items-center justify-center">
             <Zap size={18} className="text-black" />
           </div>
           <h1 className="text-xl font-black tracking-tighter uppercase italic">Vantage<span className="text-neonBlue">Onyx</span></h1>
         </div>
-        <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${dbStatus === 'online' ? 'border-green-500/30 bg-green-500/10 text-green-500' : 'border-red-500/30 bg-red-500/10 text-red-500'}`}>
+        <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${dbStatus === 'online' ? 'border-green-500/30 text-green-500' : 'border-red-500/30 text-red-500'}`}>
           <span className="text-[9px] font-black uppercase tracking-widest">{dbStatus}</span>
         </div>
       </header>
 
-      {/* SCROLLABLE MAIN CONTENT */}
+      {/* SCROLLABLE MAIN */}
       <main className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="rounded-2xl border border-neonBlue/20 bg-[#0A0A0A] p-6 shadow-2xl">
           <p className="text-[10px] tracking-[0.2em] text-gray-500 uppercase font-bold">Live Whale Connections</p>
@@ -84,8 +84,8 @@ export default function App() {
 
           <div className="grid grid-cols-2 gap-3 pb-8">
             {properties.map(p => (
-              <div key={p.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0A] active:border-neonBlue transition-colors">
-                <img src={p.thumbnail_url} alt="" className="h-28 w-full object-cover opacity-80" />
+              <div key={p.id} className="overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0A]">
+                <img src={p.thumbnail_url} alt="" className="h-28 w-full object-cover" />
                 <div className="p-3">
                   <p className="truncate text-[9px] font-black uppercase text-white mb-1">{p.title}</p>
                   <p className="font-mono text-[11px] text-neonBlue font-bold italic">₦{Number(p.price_naira).toLocaleString()}</p>
@@ -96,19 +96,18 @@ export default function App() {
         </section>
       </main>
 
-      {/* NAVIGATION MENU */}
+      {/* FIXED NAVIGATION */}
       <nav className="flex-none h-20 bg-[#050505] border-t border-white/10 flex items-center justify-around px-2 z-50">
         <button className="flex flex-col items-center gap-1 min-w-[60px]">
           <Home className="text-neonBlue" size={22} />
-          <span className="text-[8px] font-black uppercase text-neonBlue tracking-widest">Node</span>
+          <span className="text-[8px] font-black uppercase text-neonBlue">Node</span>
         </button>
         
         <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-25">
           <Users className="text-white" size={22} />
-          <span className="text-[8px] font-black uppercase text-white tracking-widest">Leads</span>
+          <span className="text-[8px] font-black uppercase text-white">Leads</span>
         </button>
 
-        {/* FLOATING ACTION BUTTON */}
         <div className="relative -top-6">
           <button 
             onClick={() => setShowAddModal(true)}
@@ -120,31 +119,31 @@ export default function App() {
 
         <button className="flex flex-col items-center gap-1 min-w-[60px] opacity-25">
           <BarChart3 className="text-white" size={22} />
-          <span className="text-[8px] font-black uppercase text-white tracking-widest">Stats</span>
+          <span className="text-[8px] font-black uppercase text-white">Stats</span>
         </button>
 
         <button onClick={() => setStealth(!stealth)} className="flex flex-col items-center gap-1 min-w-[60px]">
           <Shield className={stealth ? "text-amber-500" : "text-white opacity-25"} size={22} />
-          <span className={`text-[8px] font-black uppercase tracking-widest ${stealth ? 'text-amber-500' : 'text-white opacity-25'}`}>
+          <span className={`text-[8px] font-black uppercase ${stealth ? 'text-amber-500' : 'text-white opacity-25'}`}>
             {stealth ? 'Mask' : 'Shield'}
           </span>
         </button>
       </nav>
 
-      {/* DEPLOYMENT MODAL */}
+      {/* ADD ASSET MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-6 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0D0D0D] border border-neonBlue/30 p-8 rounded-[2.5rem] space-y-6 shadow-[0_0_50px_rgba(0,0,0,1)]">
+          <div className="w-full max-w-md bg-[#0D0D0D] border border-neonBlue/30 p-8 rounded-[2rem] space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-neonBlue font-black uppercase tracking-widest text-[10px]">Asset Deployment</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 p-2"><X size={24} /></button>
+              <h2 className="text-neonBlue font-black uppercase text-[10px]">Deploy Asset</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400"><X size={24} /></button>
             </div>
             <div className="space-y-4">
-               <input placeholder="ASSET IDENTITY" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs uppercase text-white outline-none focus:border-neonBlue transition-all" value={newProp.title} onChange={e => setNewProp({...newProp, title: e.target.value})} />
-               <input placeholder="MARKET PRICE (₦)" type="number" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-neonBlue transition-all" value={newProp.price_naira} onChange={e => setNewProp({...newProp, price_naira: e.target.value})} />
-               <input placeholder="IMAGE SOURCE URL" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-xs text-white outline-none focus:border-neonBlue transition-all" value={newProp.thumbnail_url} onChange={e => setNewProp({...newProp, thumbnail_url: e.target.value})} />
+               <input placeholder="ASSET IDENTITY" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.title} onChange={e => setNewProp({...newProp, title: e.target.value})} />
+               <input placeholder="PRICE (₦)" type="number" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.price_naira} onChange={e => setNewProp({...newProp, price_naira: e.target.value})} />
+               <input placeholder="IMAGE URL" className="w-full bg-black border border-white/10 p-4 rounded-xl text-xs text-white outline-none" value={newProp.thumbnail_url} onChange={e => setNewProp({...newProp, thumbnail_url: e.target.value})} />
             </div>
-            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.4em] active:scale-95 transition-transform">Confirm Auth</button>
+            <button onClick={addProperty} className="w-full bg-neonBlue text-black font-black py-4 rounded-xl uppercase text-[10px]">Authorize</button>
           </div>
         </div>
       )}
