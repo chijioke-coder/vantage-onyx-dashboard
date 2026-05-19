@@ -39,7 +39,7 @@ export default function App() {
   // Search Context Filters
   const [assetSearch, setAssetSearch] = useState("");
 
-  // Input Data Buffers (Aligned directly with your explicit column names)
+  // Input Data Buffers (Aligned directly with your updated global price context)
   const [formTitle, setFormTitle] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formSlug, setFormSlug] = useState("");
@@ -146,7 +146,7 @@ export default function App() {
   const loadAssetIntoFormContext = (asset) => {
     setSelectedAssetId(asset.id);
     setFormTitle(asset.title || "");
-    setFormPrice((asset.price_naira || 0).toString());
+    setFormPrice((asset.price || 0).toString());
     setFormSlug(asset.system_slug || "");
     setFormStatus(asset.status || "Available");
     setFormLocation(asset.location_tag || "");
@@ -163,7 +163,7 @@ export default function App() {
 
     const payload = {
       title: formTitle.toUpperCase(),
-      price_naira: Number(formPrice) || 0,
+      price: Number(formPrice) || 0,
       system_slug: formSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       status: formStatus,
       location_tag: formLocation,
@@ -422,7 +422,7 @@ export default function App() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-zinc-400 block mb-1 uppercase">Price (₦ - Naira BigInt)</label>
+                            <label className="text-zinc-400 block mb-1 uppercase">Price (₦ - Global Context)</label>
                             <input type="number" value={formPrice} onChange={(e) => setFormPrice(e.target.value)} className="w-full bg-black border border-white/10 p-2 text-white focus:border-neonBlue focus:outline-none" required />
                           </div>
                           <div>
@@ -486,7 +486,7 @@ export default function App() {
                       </div>
                       <div className="bg-black/50 p-3 border border-white/5 space-y-1 text-[8px] text-zinc-400">
                         <span className="text-zinc-500 block uppercase font-bold text-[7px]">Active Selection State: {activeAsset?.title || "None"}</span>
-                        <div>Current Slot Target Data Map: <span className="text-neonBlue break-all">{activeAsset ? activeAsset[`${mediaType === "image" ? "img_angle" : mediaType}_${selectedMediaSlot}`] || "Empty Empty Array Slot Node" : "N/A"}</span></div>
+                        <div>Current Slot Target Data Map: <span className="text-neonBlue break-all">{activeAsset ? activeAsset[`${mediaType === "image" ? "img_angle" : mediaType}_${selectedMediaSlot}`] || "Empty Array Slot Node" : "N/A"}</span></div>
                       </div>
                     </div>
 
@@ -535,7 +535,7 @@ export default function App() {
                                 <div className="p-4 flex-1 flex flex-col justify-between font-mono">
                                   <div onClick={() => loadAssetIntoFormContext(asset)} className="cursor-pointer">
                                     <h3 className="text-[10px] uppercase tracking-widest font-black text-white truncate">{asset.title || "UNNAMED CONFIGURATION MATRIX"}</h3>
-                                    <p className="text-xs text-neonBlue font-bold mt-0.5">₦{Number(asset.price_naira || 0).toLocaleString()}</p>
+                                    <p className="text-xs text-neonBlue font-bold mt-0.5">₦{Number(asset.price || 0).toLocaleString()}</p>
                                   </div>
 
                                   {/* THE QUANT ENGINE RELATIVE PER-UNIT DATA SHARE VISUALISERS */}
@@ -575,7 +575,9 @@ export default function App() {
                 </div>
               </div>
             )}
-          </main>
-        </div>
-      );
-    }
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
