@@ -7,12 +7,14 @@ import {
 
 import Sidebar from "./components/Sidebar";
 import CommandModal from "./components/CommandModal";
+
+// Corrected import path targeting your src/lib architecture
 import { 
   initDynamicSupabase, 
   saveDatabaseConfig, 
   getDatabaseConfig, 
   disconnectDatabase 
-} from "./supabase";
+} from "./lib/supabase";
 
 const FALLBACK_MEDIA_URL = "https://i.postimg.cc/k4PTnLBS/file-00000000ce7c71fbae2f98c908c282f5.png";
 
