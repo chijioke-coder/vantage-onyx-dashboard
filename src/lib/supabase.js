@@ -17,13 +17,14 @@ const restoreString = (cipherText) => {
 };
 
 /**
- * Hybrid Core Config Reader: Checks Vercel environment variables first, 
+ * Hybrid Core Config Reader: Checks Vite environment variables first, 
  * then checks browser local storage for non-technical buyers.
+ * NOTE: Vite uses import.meta.env exclusively - process.env is NOT available in browser
  */
 export const getDatabaseConfig = () => {
-  // 1. Try gathering from modern bundler environment context (Vercel/Vite/CRA)
-  const envUrl = import.meta.env?.VITE_SUPABASE_URL || process.env?.REACT_APP_SUPABASE_URL || "";
-  const envKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || process.env?.REACT_APP_SUPABASE_ANON_KEY || "";
+  // 1. Try gathering from Vite environment context (import.meta.env.VITE_*)
+  const envUrl = import.meta.env?.VITE_SUPABASE_URL || "";
+  const envKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || "";
 
   if (envUrl && envKey) {
     return { url: envUrl, key: envKey, isHardcoded: true };
