@@ -1,6 +1,6 @@
 // src/components/SystemInit.tsx
 import { useState, useEffect } from 'react';
-import { Shield, Lock, Save, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Save, AlertTriangle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface SystemInitProps {
@@ -13,22 +13,18 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [enteredPassword, setEnteredPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showSetupWarning, setShowSetupWarning] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const MASTER_PASSWORD_KEY = 'vantage_onyx_master_hash';
 
-  // Check if master password is already set
   useEffect(() => {
     const savedHash = localStorage.getItem(MASTER_PASSWORD_KEY);
     if (savedHash) {
       setStage('login');
-    } else {
-      setStage('setup');
     }
   }, []);
 
   const hashPassword = (pass: string): string => {
-    // Simple but effective client-side hashing for demo/sellable kit
     let hash = 0;
     for (let i = 0; i < pass.length; i++) {
       const char = pass.charCodeAt(i);
@@ -39,8 +35,8 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
   };
 
   const handleSetup = () => {
-    if (!password || password.length < 6) {
-      toast.error("Master sequence must be at least 6 characters");
+    if (password.length < 6) {
+      toast.error("Master Sequence must be at least 6 characters");
       return;
     }
     if (password !== confirmPassword) {
@@ -51,67 +47,71 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
     setIsProcessing(true);
     const hashed = hashPassword(password);
     localStorage.setItem(MASTER_PASSWORD_KEY, hashed);
-    
+
     setTimeout(() => {
-      toast.success("Master Sequence Successfully Configured");
+      toast.success("Master Sequence Secured Successfully");
       setStage('login');
       setPassword('');
       setConfirmPassword('');
       setIsProcessing(false);
-    }, 600);
+    }, 700);
   };
 
   const handleLogin = () => {
     setIsProcessing(true);
     const savedHash = localStorage.getItem(MASTER_PASSWORD_KEY);
-    
+
     setTimeout(() => {
       if (savedHash && hashPassword(enteredPassword) === savedHash) {
-        toast.success("ZERO-TRUST BOOT SEQUENCE COMPLETE");
+        toast.success("ZERO-TRUST BOOT SEQUENCE COMPLETE ✓");
         onInitialized();
       } else {
-        toast.error("ACCESS DENIED — INVALID MASTER SEQUENCE");
+        toast.error("ACCESS DENIED — INVALID SEQUENCE");
         setEnteredPassword('');
       }
       setIsProcessing(false);
-    }, 700);
+    }, 800);
   };
 
-  // First Time Setup Screen
+  const handleReset = () => {
+    localStorage.removeItem(MASTER_PASSWORD_KEY);
+    setStage('setup');
+    setPassword('');
+    setConfirmPassword('');
+    setEnteredPassword('');
+    setShowResetConfirm(false);
+    toast.success("Master Sequence Reset. You can set a new one.");
+  };
+
+  // ================= SETUP SCREEN =================
   if (stage === 'setup') {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center z-[100] font-mono">
-        <div className="w-full max-w-lg border border-zinc-700 p-10 bg-black">
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center p-4 z-[100] font-mono">
+        <div className="w-full max-w-md border border-zinc-700 bg-black p-8 sm:p-10">
           <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-3">
-              <Shield className="text-cyan-400" size={48} />
-              <div>
-                <div className="text-cyan-400 text-3xl tracking-[4px]">VANTAGE</div>
-                <div className="text-white/80 text-xl -mt-2">ONYX ZENITH</div>
-              </div>
-            </div>
+            <Shield className="text-cyan-400" size={56} />
           </div>
 
-          <h2 className="text-center text-white text-2xl mb-2">INITIAL SETUP</h2>
-          <p className="text-center text-zinc-400 mb-8">Create your Master Access Sequence</p>
+          <h1 className="text-center text-3xl font-black text-white tracking-tighter mb-1">VANTAGE ONYX</h1>
+          <p className="text-center text-cyan-400 text-sm mb-8">ZENITH HORIZON — INITIAL SETUP</p>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             <div>
-              <label className="block text-xs text-zinc-500 mb-2">NEW MASTER SEQUENCE</label>
+              <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Create Master Sequence</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-4 text-zinc-500" size={20} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-white focus:border-cyan-500 outline-none text-lg"
+                  className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-lg text-white focus:border-cyan-400 outline-none"
                   placeholder="Minimum 6 characters"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-zinc-500 mb-2">CONFIRM MASTER SEQUENCE</label>
+              <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Confirm Master Sequence</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-4 text-zinc-500" size={20} />
                 <input
@@ -119,7 +119,7 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSetup()}
-                  className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-white focus:border-cyan-500 outline-none text-lg"
+                  className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-lg text-white focus:border-cyan-400 outline-none"
                   placeholder="Re-enter sequence"
                 />
               </div>
@@ -128,13 +128,13 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
             <button
               onClick={handleSetup}
               disabled={isProcessing || !password || !confirmPassword}
-              className="w-full py-4 bg-white text-black font-bold hover:bg-cyan-400 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full py-4 bg-white hover:bg-cyan-400 text-black font-bold text-sm uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              {isProcessing ? "SECURING..." : "SAVE & INITIALIZE"}
+              {isProcessing ? "SECURING SYSTEM..." : "SAVE & INITIALIZE COMMAND CENTER"}
             </button>
           </div>
 
-          <p className="text-center text-[10px] text-zinc-600 mt-8">
+          <p className="text-center text-[10px] text-zinc-600 mt-10">
             HIGH-SECURITY BOOTLOADER • V2.1 • Sellable Kit
           </p>
         </div>
@@ -142,50 +142,66 @@ export default function SystemInit({ onInitialized }: SystemInitProps) {
     );
   }
 
-  // Login Screen
+  // ================= LOGIN SCREEN =================
   return (
-    <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center z-[100] font-mono">
-      <div className="w-full max-w-lg border border-zinc-700 p-10 bg-black">
+    <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center p-4 z-[100] font-mono">
+      <div className="w-full max-w-md border border-zinc-700 bg-black p-8 sm:p-10">
         <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-3">
-            <Shield className="text-cyan-400" size={48} />
-            <div>
-              <div className="text-cyan-400 text-3xl tracking-[4px]">VANTAGE</div>
-              <div className="text-white/80 text-xl -mt-2">ONYX ZENITH</div>
-            </div>
-          </div>
+          <Shield className="text-cyan-400" size={56} />
         </div>
 
-        <h2 className="text-center text-white text-xl mb-8">ENTER MASTER SEQUENCE</h2>
+        <h1 className="text-center text-3xl font-black text-white tracking-tighter mb-1">VANTAGE ONYX</h1>
+        <p className="text-center text-cyan-400 text-sm mb-8">ENTER MASTER SEQUENCE TO UNLOCK</p>
 
         <div className="space-y-6">
-          <div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-4 text-zinc-500" size={20} />
-              <input
-                type="password"
-                value={enteredPassword}
-                onChange={(e) => setEnteredPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-white focus:border-cyan-500 outline-none text-lg"
-                placeholder="ENTER MASTER SEQUENCE"
-              />
-            </div>
+          <div className="relative">
+            <Lock className="absolute left-4 top-4 text-zinc-500" size={20} />
+            <input
+              type="password"
+              value={enteredPassword}
+              onChange={(e) => setEnteredPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 text-lg text-white focus:border-cyan-400 outline-none"
+              placeholder="ENTER MASTER SEQUENCE"
+            />
           </div>
 
           <button
             onClick={handleLogin}
             disabled={isProcessing || !enteredPassword}
-            className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-bold transition-all disabled:opacity-50"
+            className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm uppercase tracking-widest transition-all disabled:opacity-50"
           >
             {isProcessing ? "VERIFYING..." : "INITIALIZE COMMAND CENTER"}
           </button>
+
+          <div className="text-center">
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="text-xs text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1.5 mx-auto"
+            >
+              <RefreshCw size={12} /> Forgot Master Sequence?
+            </button>
+          </div>
         </div>
 
-        <p className="text-center text-[10px] text-zinc-600 mt-8">
-          HIGH-SECURITY BOOTLOADER • V2.1
+        <p className="text-center text-[10px] text-zinc-600 mt-10">
+          HIGH-SECURITY BOOTLOADER • V2.1 • Sellable Kit
         </p>
       </div>
+
+      {/* Reset Confirmation */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[110] p-4">
+          <div className="bg-zinc-900 border border-red-500/50 p-6 max-w-xs w-full text-center">
+            <AlertTriangle className="text-red-500 mx-auto mb-4" size={32} />
+            <p className="text-sm mb-6">This will permanently delete the current Master Sequence.<br />You will need to create a new one.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 border border-zinc-700 text-zinc-400">Cancel</button>
+              <button onClick={handleReset} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white">Reset Now</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
