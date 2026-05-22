@@ -23,7 +23,7 @@ export default function App() {
   // ==================== ZERO-TRUST BOOTLOADER ====================
   const [isSystemInitialized, setIsSystemInitialized] = useState(false);
 
-  // ==================== YOUR ORIGINAL STATES ====================
+  // ==================== ORIGINAL STATES ====================
   const [activeTab, setActiveTab] = useState("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -57,7 +57,9 @@ export default function App() {
 
   const activeAsset = assets.find(a => a.id === selectedAssetId) || null;
 
-  // Load credentials
+  const totalPropertyViews = assets.reduce((acc, curr) => acc + (curr.view_count || 0), 0);
+  const totalTourViews = assets.reduce((acc, curr) => acc + (curr.virtual_tour_views || 0), 0);
+
   useEffect(() => {
     const { url, key } = getDatabaseConfig();
     if (url && key) {
@@ -72,30 +74,45 @@ export default function App() {
     if (!client) return;
     setLoading(true);
     try {
-      const { data: propData } = await client.from("properties_db").select("*").order("title", { ascending: true });
+      const { data: propData, error: propErr } = await client
+        .from("properties_db")
+        .select("*")
+        .order("title", { ascending: true });
+      if (propErr) throw propErr;
       setAssets(propData || []);
 
       if (propData && propData.length > 0 && !selectedAssetId) {
         loadAssetIntoFormContext(propData[0]);
       }
 
-      const { data: logData } = await client.from("vantage_download_logs").select("*").order("created_at", { ascending: false });
+      const { data: logData } = await client
+        .from("vantage_download_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
       setDownloadLogs(logData || []);
 
-      const { data: visitorData } = await client.from("visitors_db").select("*").order("created_at", { ascending: false });
+      const { data: visitorData } = await client
+        .from("visitors_db")
+        .select("*")
+        .order("created_at", { ascending: false });
       setVisitors(visitorData || []);
 
-      const { data: realtorData } = await client.from("realtors_registry").select("*");
+      const { data: realtorData } = await client
+        .from("realtors_registry")
+        .select("*");
       setRealtors(realtorData || []);
+
     } catch (err) {
-      console.error(err);
+      console.error("Pipeline Synchronisation Fault:", err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isConnected) syncDashboardDataPipeline();
+    if (isConnected) {
+      syncDashboardDataPipeline();
+    }
   }, [isConnected]);
 
   const commitCredentialsConnection = (e) => {
@@ -111,6 +128,7 @@ export default function App() {
     disconnectDatabase();
     setDbUrl(""); setDbKey(""); setIsConnected(false);
     setAssets([]); setDownloadLogs([]); setVisitors([]); setRealtors([]);
+    alert("Connection Terminal Disconnected.");
   };
 
   const loadAssetIntoFormContext = (asset) => {
@@ -144,10 +162,10 @@ export default function App() {
     try {
       const { error } = await client.from("properties_db").update(payload).eq("id", selectedAssetId);
       if (error) throw error;
-      alert("Asset updated successfully");
+      alert("Asset matrix variables successfully synced live.");
       syncDashboardDataPipeline();
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      alert(`Write Exception: ${err.message}`);
     }
   };
 
@@ -157,40 +175,46 @@ export default function App() {
     if (!client) return;
 
     let targetKey = "";
-    if (mediaType === "image") targetKey = `img_angle_${selectedMediaSlot}`;
-    else if (mediaType === "tour") targetKey = `tour_url_${selectedMediaSlot}`;
+    if (mediaType === "image") {
+      if (selectedMediaSlot > 4) return alert("Target out of index: Only 4 explicit image angle slots available.");
+      targetKey = `img_angle_${selectedMediaSlot}`;
+    } else if (mediaType === "tour") targetKey = `tour_url_${selectedMediaSlot}`;
     else if (mediaType === "tour_title") targetKey = `tour_title_${selectedMediaSlot}`;
     else if (mediaType === "video") targetKey = `video_url_${selectedMediaSlot}`;
 
     try {
-      const { error } = await client.from("properties_db").update({ [targetKey]: mediaUrlInput }).eq("id", activeAsset.id);
+      const { error } = await client
+        .from("properties_db")
+        .update({ [targetKey]: mediaUrlInput })
+        .eq("id", activeAsset.id);
+
       if (error) throw error;
       setMediaUrlInput("");
-      alert(`Media injected into ${targetKey}`);
+      alert(`Injected asset link straight into [${targetKey.toUpperCase()}]`);
       syncDashboardDataPipeline();
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      alert(`Slot Routing Exception: ${err.message}`);
     }
   };
 
   const handleBulkStatusTransformation = async (newStatus) => {
-    if (bulkSelection.length === 0) return alert("No assets selected");
+    if (bulkSelection.length === 0) return alert("Zero bulk checklist selection targets specified.");
     const client = initDynamicSupabase();
     if (!client) return;
 
     try {
       const { error } = await client.from("properties_db").update({ status: newStatus }).in("id", bulkSelection);
       if (error) throw error;
-      alert(`Bulk updated to ${newStatus}`);
+      alert(`Bulk update complete. Modified ${bulkSelection.length} property items to ${newStatus}.`);
       setBulkSelection([]);
       syncDashboardDataPipeline();
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      alert(`Bulk Mutation Fault: ${err.message}`);
     }
   };
 
   const deleteLeadLogNode = async (id) => {
-    if (!confirm("Delete this log?")) return;
+    if (!confirm("Irreversibly erase this premium lead logging trace sequence?")) return;
     const client = initDynamicSupabase();
     if (!client) return;
     try {
@@ -203,62 +227,94 @@ export default function App() {
 
   return (
     <>
-      {!isSystemInitialized && <SystemInit onInitialized={() => setIsSystemInitialized(true)} />}
+      {/* ZERO-TRUST BOOTLOADER */}
+      {!isSystemInitialized && (
+        <SystemInit onInitialized={() => setIsSystemInitialized(true)} />
+      )}
 
       {isSystemInitialized && (
-        <div className="min-h-screen bg-black text-zinc-100 font-sans tracking-tight antialiased">
-          {/* Topbar */}
-          <header className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/90 backdrop-blur-md z-50 px-4 flex items-center justify-between">
+        <div className="min-h-screen bg-black text-zinc-100 font-sans tracking-tight antialiased selection:bg-neonBlue selection:text-black">
+          
+          {/* GLOBAL TOPBAR */}
+          <header className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-black/80 backdrop-blur-md z-[200] px-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-zinc-400 hover:text-white">
+              <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors">
                 <Menu size={20} />
               </button>
-              <span onClick={() => setActiveTab("home")} className="text-cyan-400 font-black text-xl tracking-tighter cursor-pointer">
-                ⚡ VANTAGE<span className="text-white">ONYX</span>
+              <span onClick={() => setActiveTab("home")} className="text-neonBlue font-black text-xl tracking-tighter italic cursor-pointer">
+                ⚡ VANTAGE<span className="text-white not-italic font-light">ONYX</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button onClick={() => setShowConfigModal(true)} className={`px-4 py-1 text-xs border ${isConnected ? 'border-emerald-500 text-emerald-400' : 'border-red-500 text-red-400'}`}>
-                {isConnected ? "CLUSTER ONLINE" : "BIND DATABASE"}
+            <nav className="hidden md:flex items-center gap-6 text-[10px] uppercase tracking-widest font-mono font-black">
+              {["home", "leads", "inventory"].map((t) => (
+                <button key={t} onClick={() => setActiveTab(t)} className={`transition-all pb-1 ${activeTab === t ? "text-neonBlue border-b border-neonBlue" : "text-gray-400 hover:text-neonBlue"}`}>
+                  {t === "home" ? "Terminal Hub" : t === "leads" ? "Intel Radar" : "Assets Manager"}
+                </button>
+              ))}
+            </nav>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowConfigModal(true)} 
+                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] uppercase font-bold border font-mono transition-all tracking-widest ${isConnected ? "border-emerald-500/30 text-emerald-400 bg-emerald-950/20" : "border-red-500/30 text-red-400 bg-red-950/20"}`}
+              >
+                <Database size={11} />
+                {isConnected ? "CLUSTER ONLINE" : "BIND INTERCEPTOR"}
               </button>
-              <button onClick={() => setIsCommandOpen(true)}><Terminal size={16} /></button>
+              <button onClick={() => setIsCommandOpen(true)} className="p-2 border border-white/10 bg-[#0A0A0A] text-zinc-400 hover:text-white">
+                <Terminal size={14} />
+              </button>
             </div>
           </header>
 
           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} activeTab={activeTab} setActiveTab={setActiveTab} />
           <CommandModal isOpen={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
 
-          {/* Config Modal */}
+          {/* CONFIG MODAL */}
           {showConfigModal && (
-            <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[300] p-4">
-              <div className="bg-[#0A0A0A] border border-white/10 p-8 rounded-2xl w-full max-w-md font-mono">
-                <button onClick={() => setShowConfigModal(false)} className="float-right text-zinc-500"><X size={18} /></button>
-                <h2 className="font-bold mb-6">Supabase Connection</h2>
-                <form onSubmit={commitCredentialsConnection} className="space-y-4">
-                  <input type="text" value={dbUrl} onChange={(e) => setDbUrl(e.target.value)} placeholder="Supabase URL" className="w-full p-3 bg-black border border-white/10" required />
-                  <input type="password" value={dbKey} onChange={(e) => setDbKey(e.target.value)} placeholder="Anon Key" className="w-full p-3 bg-black border border-white/10" required />
-                  <button type="submit" className="w-full bg-cyan-500 text-black py-3 font-bold">Connect</button>
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
+              <div className="border border-white/10 bg-[#0A0A0A] w-full max-w-md p-6 relative rounded-2xl font-mono">
+                <button onClick={() => setShowConfigModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={16} /></button>
+                <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
+                  <Database className="text-neonBlue" size={16} />
+                  <h2 className="font-black uppercase text-xs text-white tracking-widest">Supabase Node Dynamic Access Router</h2>
+                </div>
+                <form onSubmit={commitCredentialsConnection} className="space-y-4 text-[10px]">
+                  <div>
+                    <label className="text-zinc-400 block mb-1 uppercase tracking-wider">PROJECT CORE INTERFACES URL</label>
+                    <input type="text" value={dbUrl} onChange={(e) => setDbUrl(e.target.value)} placeholder="https://your-uid.supabase.co" className="w-full bg-black border border-white/10 p-2 text-white focus:border-neonBlue focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label className="text-zinc-400 block mb-1 uppercase tracking-wider">ANON SECRET COMPONENT TOKEN</label>
+                    <input type="password" value={dbKey} onChange={(e) => setDbKey(e.target.value)} placeholder="eyJhbGciOiJIUzI1NiIsIn..." className="w-full bg-black border border-white/10 p-2 text-white focus:border-neonBlue focus:outline-none" required />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="submit" className="flex-1 bg-neonBlue text-black font-black uppercase py-2 tracking-widest hover:opacity-90">Inject Secure Interceptor</button>
+                    {isConnected && <button type="button" onClick={clearCredentialsConnection} className="bg-red-950 text-red-400 border border-red-500/30 px-3 uppercase font-bold">Sever Cloud Link</button>}
+                  </div>
                 </form>
               </div>
             </div>
           )}
 
-          <main className="pt-20 px-4 pb-12">
-            {isConnected ? (
+          {/* MAIN CONTENT */}
+          <main className="pt-24 pb-8 px-4 max-w-7xl mx-auto relative z-10">
+            {!isConnected && (
+              <div className="border border-red-500/20 bg-red-950/10 p-8 rounded-2xl flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-4 my-12 font-mono">
+                <ShieldAlert size={32} className="text-red-500 animate-pulse" />
+                <h3 className="text-xs font-black uppercase text-white tracking-widest">Active Database Bridge Connection Missing</h3>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">Vantage Onyx is running in standalone local test architecture. Click the cloud token to bind your Zenith Horizon database deployment instance.</p>
+                <button onClick={() => setShowConfigModal(true)} className="border border-red-500/30 text-red-400 bg-red-950/20 px-4 py-1.5 uppercase text-[9px] font-black tracking-widest hover:bg-red-500 hover:text-black transition-all">Instantiate Handshake Node</button>
+              </div>
+            )}
+
+            {isConnected && (
               <>
-                {activeTab === "home" && <div>Home Terminal Content</div>}
-                {activeTab === "leads" && <div>Intel Radar Content</div>}
-                {activeTab === "inventory" && (
-                  <div>
-                    <h2 className="text-xl font-bold mb-4">Synchronised Asset Registers</h2>
-                    {/* Add your full Property Action Matrix form here if you have it saved */}
-                    <p>Asset Matrix Section - Add your full form code here</p>
-                  </div>
-                )}
+                {activeTab === "home" && ( /* Your home content */ )}
+                {activeTab === "leads" && ( /* Your leads content */ )}
+                {activeTab === "inventory" && ( /* Your full inventory content here */ )}
               </>
-            ) : (
-              <p>Please connect to Supabase</p>
             )}
           </main>
         </div>
